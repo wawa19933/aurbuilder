@@ -19,7 +19,7 @@ var serveCmd = &cobra.Command{
 		aurbuild serve /srv/repo
 would start HTTP server on port 80 with access to /srv/repo`,
 	Run: func(cmd *cobra.Command, args []string) {
-		startPythonServer(args[1])
+		startPythonServer(args[0])
 	},
 }
 
