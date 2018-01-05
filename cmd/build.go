@@ -18,6 +18,7 @@ var buildCmd = &cobra.Command{
 	Long: `Example:
 		aurbuilder build radare2-git radare2-cutter-git`,
 	Run: func(cmd *cobra.Command, args []string) {
+		UpdatePacmanDatabase()
 		if aurBuild(args) != nil {
 			os.Exit(1)
 		}

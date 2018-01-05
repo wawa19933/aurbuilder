@@ -4,9 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	"bytes"
+	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"log"
+	"os/exec"
 )
 
 var cfgFile string
@@ -25,6 +29,7 @@ By default executes 'aurbuilder serve /repository'`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
+		UpdatePacmanDatabase()
 		startPythonServer("/repository")
 	},
 }
@@ -72,4 +77,74 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
+}
+
+func UpdatePacmanDatabase() {
+	info := color.New(color.FgCyan)
+	error := color.New(color.FgRed)
+	notice := color.New(color.FgYellow)
+
+	yellow := notice.SprintFunc()
+	red := error.SprintFunc()
+
+	info.Print("Updating pacman database...")
+
+	var pacman *exec.Cmd
+	stdout := new(bytes.Buffer)
+	stderr := new(bytes.Buffer)
+
+	if os.Geteuid() != 0 {
+		fmt.Println()
+
+		pacman = exec.Command("sudo", "sh", "-c", "pacman -Sy --noconfirm >/dev/null")
+		pacman.Stdin = os.Stdin
+		pacman.Stdout = os.Stdout
+		pacman.Stderr = os.Stderr
+	} else {
+		pacman = exec.Command("pacman", "-Sy", "--noconfirm")
+		pacman.Stdout = stdout
+		pacman.Stderr = stderr
+	}
+
+	if err := pacman.Run(); err != nil {
+		error.Println("Failed!")
+		log.Printf("Error: %s\nStdError:\n%s\nStdOut:\n%s\n", red(err), red(stderr.String()),
+			yellow(stdout.String()))
+	}
+	notice.Println("OK!")
+}
+
+func UpdatePacmanPackages() {
+	info := color.New(color.FgCyan)
+	error := color.New(color.FgRed)
+	notice := color.New(color.FgYellow)
+
+	yellow := notice.SprintFunc()
+	red := error.SprintFunc()
+
+	info.Print("Updating packages with pacman...")
+
+	var pacman *exec.Cmd
+	stdout := new(bytes.Buffer)
+	stderr := new(bytes.Buffer)
+
+	if os.Geteuid() != 0 {
+		fmt.Println()
+
+		pacman = exec.Command("sudo", "sh", "-c", "pacman -Syu --noconfirm >/dev/null")
+		pacman.Stdin = os.Stdin
+		pacman.Stdout = os.Stdout
+		pacman.Stderr = os.Stderr
+	} else {
+		pacman = exec.Command("pacman", "-Syu", "--noconfirm")
+		pacman.Stdout = stdout
+		pacman.Stderr = stderr
+	}
+
+	if err := pacman.Run(); err != nil {
+		error.Println("Failed!")
+		log.Printf("Error: %s\nStdError:\n%s\nStdOut:\n%s\n", red(err), red(stderr.String()),
+			yellow(stdout.String()))
+	}
+	notice.Println("OK!")
 }
